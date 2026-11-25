@@ -7,7 +7,7 @@
         ],
         'inherit' => [
             'label' => t('Default'),
-            'help' => t('Use your project watch and profile rules. Creating, being assigned to, or commenting on this task subscribes you.'),
+            'help' => t('Use your project watch and profile rules. Creating the task, being assigned to it, or being @mentioned subscribes you.'),
         ],
         'unsubscribe' => [
             'label' => t('Unsubscribed'),

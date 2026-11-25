@@ -7,9 +7,9 @@ Add GitHub-style project watches and task subscriptions to Plan without creating
 ## First release
 
 - Projects: **Default** keeps existing Kanboard preferences; **Watch** opts into supported activity on all tasks.
-- Tasks: **Inherit** is the initial state. Creating a task, being assigned to it, or commenting subscribes the user automatically. **Subscribe** also works manually. **Unsubscribe** blocks automatic resubscription but allows inherited alerts; **Mute** blocks both. **Inherit** clears the override. Unassigning someone does not remove their subscription.
+- Tasks: **Inherit** is the initial state. Creating a task, being assigned to it, or receiving a direct mention subscribes the user automatically. **Subscribe** also works manually. **Unsubscribe** blocks automatic resubscription but allows inherited alerts; **Mute** blocks both. **Inherit** clears the override. Unassigning someone does not remove their subscription.
 - Supported watch events: new tasks, new comments, assignment changes, closing and reopening. Other activity retains its existing personal notification rules, subject to task mute.
-- Direct mentions in new task descriptions and comments are delivered even if the recipient muted the task. They do not subscribe anyone and take precedence over ordinary watch notifications for the same action. Use Plan's native mention syntax; notifying on edits that introduce mentions is a follow-up.
+- Direct mentions in new task descriptions and visible comments subscribe recipients whose task setting is **Inherit**. Mention alerts bypass task mute and take precedence over ordinary watch notifications for the same action. Use Plan's native mention syntax; notifying on edits that introduce mentions is a follow-up.
 - Use the existing in-app and email channel preferences. Do not notify users about their own actions, inactive accounts, or users who no longer belong to the project. Leave project-wide integrations unchanged. Do not backfill old subscriptions.
 
 ## Implementation

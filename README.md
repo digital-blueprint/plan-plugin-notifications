@@ -25,13 +25,13 @@ On the board, task list, or overview pages, use the bell menu after the view lin
 
 ### When Plan subscribes you automatically
 
-You automatically subscribe to a task when you **create it**, **are assigned to it**, or **post a comment on it**, provided you’re an active member of the project (directly or through a group). Existing tasks are not backfilled when the plugin is installed. Being unassigned does not remove your subscription. **Unsubscribed** and **Muted** are remembered until you change them; choosing **Default** makes automatic subscription possible again.
+You automatically subscribe to a task when you **create it**, **are assigned to it**, or **receive a direct `@mention`** in a new task description or a comment you can see, provided you’re an active member of the project (directly or through a group). Posting a comment alone does not subscribe you. Existing tasks are not backfilled when the plugin is installed. Being unassigned does not remove your subscription. **Unsubscribed** and **Muted** are remembered until you change them; choosing **Default** makes automatic subscription possible again.
 
 ### Which rule wins?
 
 Plan only sends personal alerts to active project members with an enabled channel. It doesn’t notify you about your own actions or send you a comment you don’t have permission to see.
 
-1. **Direct `@mention`:** Use Plan’s mention picker in a new task description or a new comment. A direct mention bypasses task mute, project watch settings, and profile filters. It does not subscribe the recipient. Adding a mention by editing an existing task or comment does not trigger a new mention alert.
+1. **Direct `@mention`:** Use Plan’s mention picker in a new task description or a new comment. A direct mention bypasses task mute, project watch settings, and profile filters for the alert, but it only subscribes a recipient whose task setting is **Default**. Adding a mention by editing an existing task or comment does not trigger a new mention alert or subscription.
 2. **Mute:** If there’s no direct mention, a muted task sends no ordinary personal alert.
 3. **Subscription or project watch:** For supported activity, either one is enough. These rules can notify you even if your profile filters only allow tasks assigned to or created by you.
 4. **Profile rules:** If none of the above sends an alert or blocks it, Plan checks your usual task and project filters. For example, **Only for tasks assigned to me** still matches an assigned task even after you unsubscribe from it.
@@ -40,7 +40,7 @@ If several rules match the same action, you get **one alert per enabled channel*
 
 ### Common examples
 
-- **“I’m not watching the project. Why did I get an email?”** If you created the task, were assigned to it, or commented on it, you may already be subscribed. Check the task sidebar.
+- **“I’m not watching the project. Why did I get an email?”** If you created the task, were assigned to it, or were mentioned, you may already be subscribed. Check the task sidebar.
 - **“I unsubscribed. Why am I still getting emails?”** Check whether you watch the project or have a profile rule that matches the task. Choose **Muted** to stop ordinary alerts for just that task.
 - **“Why is there no link to the comment?”** An administrator must set the **Application URL** in Plan’s application settings. Once set, new-comment and comment-mention emails include a **View comment** link that jumps straight to the comment.
 

@@ -2,6 +2,7 @@
 
 namespace Kanboard\Plugin\Notifications\Job;
 
+use Kanboard\Core\Security\Role;
 use Kanboard\Event\GenericEvent;
 use Kanboard\Job\NotificationJob as CoreNotificationJob;
 use Kanboard\Model\CommentModel;
@@ -43,12 +44,17 @@ class NotificationJob extends CoreNotificationJob
         }
 
         $actor = (int) $this->userSession->getId();
-        if (!$actor && $eventName === CommentModel::EVENT_CREATE) {
+        if (!$actor && in_array($eventName, [CommentModel::EVENT_CREATE, CommentModel::EVENT_USER_MENTION], true)) {
             $actor = (int) ($eventData['comment']['user_id'] ?? 0);
         }
-        if (!$actor && $eventName === TaskModel::EVENT_CREATE) {
+        if (!$actor && in_array($eventName, [TaskModel::EVENT_CREATE, TaskModel::EVENT_USER_MENTION], true)) {
             $actor = (int) ($task['creator_id'] ?? 0);
         }
+
+        $assignment = $eventName === TaskModel::EVENT_ASSIGNEE_CHANGE ||
+            ($eventName === TaskModel::EVENT_UPDATE && array_key_exists('owner_id', $eventData['changes'] ?? []));
+        $mentions = $this->findMentions($eventName, $eventData, $actor);
+        $this->autoSubscribe($task, $eventData, $eventName, $assignment, array_keys($mentions));
 
         if (!empty($eventData['mention'])) {
             $userId = (int) $eventData['mention']['id'];
@@ -62,16 +68,11 @@ class NotificationJob extends CoreNotificationJob
             return;
         }
 
-        $assignment = $eventName === TaskModel::EVENT_ASSIGNEE_CHANGE ||
-            ($eventName === TaskModel::EVENT_UPDATE && array_key_exists('owner_id', $eventData['changes'] ?? []));
-        $this->autoSubscribe($task, $eventData, $eventName, $assignment);
-
         $watchEvent = $assignment || in_array($eventName, [
             TaskModel::EVENT_CREATE, CommentModel::EVENT_CREATE, TaskModel::EVENT_CLOSE, TaskModel::EVENT_OPEN,
         ], true);
         $taskPreferences = $this->subscriptionModel->getAll(SubscriptionModel::TASK, $taskId);
         $projectPreferences = $watchEvent ? $this->subscriptionModel->getAll(SubscriptionModel::PROJECT, $projectId) : [];
-        $mentions = $this->findMentions($eventName, $eventData);
         $mentionEvent = $eventName === TaskModel::EVENT_CREATE ? TaskModel::EVENT_USER_MENTION : CommentModel::EVENT_USER_MENTION;
 
         foreach ($this->userNotificationModel->getUsersWithNotificationEnabled($projectId, $actor) as $user) {
@@ -97,14 +98,11 @@ class NotificationJob extends CoreNotificationJob
         $this->projectNotificationModel->sendNotifications($projectId, $eventName, $eventData);
     }
 
-    private function autoSubscribe(array $task, array $eventData, $eventName, $assignment)
+    private function autoSubscribe(array $task, array $eventData, $eventName, $assignment, array $users)
     {
-        $users = [];
         if ($eventName === TaskModel::EVENT_CREATE) {
             $users[] = $task['creator_id'] ?? 0;
             $users[] = $task['owner_id'] ?? 0;
-        } elseif ($eventName === CommentModel::EVENT_CREATE) {
-            $users[] = $eventData['comment']['user_id'] ?? 0;
         } elseif ($assignment) {
             $users[] = $eventData['changes']['owner_id'] ?? $task['owner_id'] ?? 0;
         }
@@ -116,22 +114,33 @@ class NotificationJob extends CoreNotificationJob
         }
     }
 
-    private function findMentions($eventName, array $eventData)
+    private function findMentions($eventName, array $eventData, $actor)
     {
-        if ($eventName === TaskModel::EVENT_CREATE) {
-            $text = $eventData['task']['description'] ?? '';
-        } elseif ($eventName === CommentModel::EVENT_CREATE) {
-            $text = $eventData['comment']['comment'] ?? '';
+        if (!empty($eventData['mention'])) {
+            $users = [$this->userModel->getById($eventData['mention']['id'])];
         } else {
-            return [];
+            if ($eventName === TaskModel::EVENT_CREATE) {
+                $text = $eventData['task']['description'] ?? '';
+            } elseif ($eventName === CommentModel::EVENT_CREATE) {
+                $text = $eventData['comment']['comment'] ?? '';
+            } else {
+                return [];
+            }
+
+            // Resolve Plan autocomplete tokens independently of delivery settings.
+            preg_match_all('/@[^@\r\n\x{200B}]*\(([^()\s]+@[^()\s]+)\)\x{200B}/u', $text, $tokens);
+            $users = array_map([$this->userModel, 'getByEmail'], array_unique($tokens[1] ?? []));
         }
 
-        // Parse each Plan autocomplete token separately; the native lookup expects
-        // a single token at the start of its input.
-        preg_match_all('/@[^@\r\n\x{200B}]*\([^()\s]+@[^()\s]+\)\x{200B}/u', $text, $tokens);
+        // Match core's comment visibility rules before changing a subscription.
+        $visibility = $eventData['comment']['visibility'] ?? Role::APP_USER;
         $mentions = [];
-        foreach (array_unique($tokens[0] ?? []) as $token) {
-            foreach ($this->userMentionJob->getMentionedUsers($token) as $user) {
+        foreach ($users as $user) {
+            if (empty($user['id']) || (int) $user['id'] === $actor) {
+                continue;
+            }
+            if ($visibility === Role::APP_USER || $user['role'] === Role::APP_ADMIN ||
+                ($visibility === Role::APP_MANAGER && $user['role'] === Role::APP_MANAGER)) {
                 $mentions[$user['id']] = true;
             }
         }

@@ -61,7 +61,7 @@ if ($smtpPort) {
 $container['emailClient'] = $email;
 
 $users = [];
-foreach (['author', 'watcher', 'muted', 'other', 'assignee', 'groupwatcher', 'legacy'] as $name) {
+foreach (['author', 'watcher', 'muted', 'other', 'assignee', 'groupwatcher', 'legacy', 'mentioned', 'silent'] as $name) {
     $user = $container['userModel']->create([
         'username' => $name,
         'name' => ucfirst($name),
@@ -70,13 +70,13 @@ foreach (['author', 'watcher', 'muted', 'other', 'assignee', 'groupwatcher', 'le
     ]);
     $users[$name] = $user;
     $container['userNotificationModel']->saveSettings($user, [
-        'notification_types' => ['web' => true] + ($name === 'watcher' ? ['email' => true] : []),
+        'notification_types' => $name === 'silent' ? [] : ['web' => true] + ($name === 'watcher' ? ['email' => true] : []),
         'notifications_filter' => $name === 'legacy' ? 1 : 4,
     ]);
 }
 
 $project = $container['projectModel']->create(['name' => 'Notification integration'], $users['author'], true);
-foreach (['watcher', 'muted', 'assignee', 'legacy'] as $name) {
+foreach (['watcher', 'muted', 'assignee', 'legacy', 'mentioned', 'silent'] as $name) {
     $container['projectUserRoleModel']->addUser($project, $users[$name], Role::PROJECT_MEMBER);
 }
 $group = $container['groupModel']->create('Notification group');
@@ -105,20 +105,25 @@ $clear = function () use ($unread, $users, $email) {
 $task = $container['taskCreationModel']->create([
     'project_id' => $project,
     'title' => 'Notification test task',
-    'description' => "@Watcher (watcher@example.test)\u{200B} please review",
+    'owner_id' => $users['legacy'],
+    'description' => "@Watcher (watcher@example.test)\u{200B} please review with @Silent (silent@example.test)\u{200B} and @Other (other@example.test)\u{200B}",
 ]);
 same(Preferences::SUBSCRIBE, $prefs->get(Preferences::TASK, $task, $users['author']), 'creator automatically subscribed');
-same(Preferences::INHERIT, $prefs->get(Preferences::TASK, $task, $users['watcher']), 'mention does not subscribe');
+same(Preferences::SUBSCRIBE, $prefs->get(Preferences::TASK, $task, $users['legacy']), 'initial assignee automatically subscribed');
+same(Preferences::SUBSCRIBE, $prefs->get(Preferences::TASK, $task, $users['watcher']), 'task mention automatically subscribes');
+same(Preferences::SUBSCRIBE, $prefs->get(Preferences::TASK, $task, $users['silent']), 'mention subscribes even without a delivery channel');
+same(Preferences::INHERIT, $prefs->get(Preferences::TASK, $task, $users['other']), 'mention does not subscribe a nonmember');
 same([TaskModel::EVENT_USER_MENTION], $events('watcher'), 'native task mention and watch coalesce');
 same([TaskModel::EVENT_CREATE], $events('groupwatcher'), 'group viewer can watch');
-same([TaskModel::EVENT_CREATE], $events('legacy'), 'default preserves the existing all-tasks filter');
+same([TaskModel::EVENT_CREATE], $events('legacy'), 'initial assignee gets one notification');
 same([], $events('author'), 'no self notification even when watching');
 same([], $events('other'), 'no delivery without membership');
+same([], $events('silent'), 'subscription does not enable a delivery channel');
 same(1, count($email->messages['watcher@example.test'] ?? []), 'one notification email');
 $clear();
 
 $prefs->save(Preferences::TASK, $task, $users['muted'], Preferences::MUTE);
-$prefs->save(Preferences::TASK, $task, $users['watcher'], Preferences::SUBSCRIBE);
+$prefs->save(Preferences::TASK, $task, $users['legacy'], Preferences::UNSUBSCRIBE);
 $comment = function ($body, $name = 'author', $visibility = Role::APP_USER) use ($container, $task, $users) {
     $container['userSession']->initialize($container['userModel']->getById($users[$name]));
     return $container['commentModel']->create([
@@ -133,9 +138,14 @@ $expectCommentLink = function ($commentId, $label) use ($email, $task, $project,
     same(true, strpos($body, 'href="'.$taskUrl.'"') !== false, 'task link is preserved');
     same(true, strpos($body, 'href="'.$boardUrl.'"') !== false, 'board link is preserved');
 };
-$mentionId = $comment("Hello @Watcher (watcher@example.test)\u{200B} and @Muted (muted@example.test)\u{200B}");
+$mentionId = $comment("Hello @Watcher (watcher@example.test)\u{200B}, @Muted (muted@example.test)\u{200B}, @Mentioned (mentioned@example.test)\u{200B}, and @Legacy (legacy@example.test)\u{200B}");
 same([CommentModel::EVENT_USER_MENTION], $events('watcher'), 'overlapping subscriptions and inline mention coalesce');
 same([CommentModel::EVENT_USER_MENTION], $events('muted'), 'mute does not block mention');
+same(Preferences::MUTE, $prefs->get(Preferences::TASK, $task, $users['muted']), 'mention preserves mute');
+same([CommentModel::EVENT_USER_MENTION], $events('legacy'), 'unsubscribe does not block mention');
+same(Preferences::UNSUBSCRIBE, $prefs->get(Preferences::TASK, $task, $users['legacy']), 'mention preserves unsubscribe');
+same([CommentModel::EVENT_USER_MENTION], $events('mentioned'), 'first comment mention sends one alert');
+same(Preferences::SUBSCRIBE, $prefs->get(Preferences::TASK, $task, $users['mentioned']), 'comment mention automatically subscribes');
 same(1, count($email->messages['watcher@example.test'] ?? []), 'overlap sends a single email');
 same(true, strpos($email->messages['watcher@example.test'][0][0], 'mentioned') !== false, 'email describes the mention');
 $expectCommentLink($mentionId, 'mention email links to its comment');
@@ -145,23 +155,24 @@ $comment("@Watcher (watcher@example.test)\u{200B} please review");
 same([CommentModel::EVENT_USER_MENTION], $events('watcher'), 'separate native comment mention is suppressed');
 $clear();
 
-$comment("Restricted @Watcher (watcher@example.test)\u{200B}", 'author', Role::APP_ADMIN);
+$comment("Restricted @Watcher (watcher@example.test)\u{200B} and @Assignee (assignee@example.test)\u{200B}", 'author', Role::APP_ADMIN);
 same([], $events('watcher'), 'no restricted comment notification despite watch and mention');
 same([], $email->messages, 'no restricted comment email');
+same(Preferences::INHERIT, $prefs->get(Preferences::TASK, $task, $users['assignee']), 'a hidden mention does not subscribe the recipient');
 $clear();
 
 $commentId = $comment('Ordinary comment', 'assignee');
-same(Preferences::SUBSCRIBE, $prefs->get(Preferences::TASK, $task, $users['assignee']), 'commenter automatically subscribed');
+same(Preferences::INHERIT, $prefs->get(Preferences::TASK, $task, $users['assignee']), 'commenting alone does not subscribe');
+same([CommentModel::EVENT_CREATE], $events('mentioned'), 'a mention subscriber gets later activity without a project watch');
+same([CommentModel::EVENT_CREATE], $events('legacy'), 'unsubscribe preserves the existing all-tasks filter');
 same([], $events('muted'), 'mute blocks ordinary activity');
 $expectCommentLink($commentId, 'new comment email links to its comment');
 $clear();
 
-$prefs->save(Preferences::TASK, $task, $users['assignee'], Preferences::UNSUBSCRIBE);
-$comment('Do not resubscribe me', 'assignee');
-same(Preferences::UNSUBSCRIBE, $prefs->get(Preferences::TASK, $task, $users['assignee']), 'unsubscribe blocks resubscription on comment');
+$comment("@Assignee (assignee@example.test)\u{200B} noting this for myself", 'assignee');
+same(Preferences::INHERIT, $prefs->get(Preferences::TASK, $task, $users['assignee']), 'self-mention does not subscribe');
 $clear();
 
-$prefs->save(Preferences::TASK, $task, $users['assignee'], Preferences::INHERIT);
 $container['userSession']->initialize($container['userModel']->getById($users['author']));
 same(true, $container['taskModificationModel']->update([
     'id' => $task, 'owner_id' => $users['assignee'], 'title' => 'Updated title and assignment',
