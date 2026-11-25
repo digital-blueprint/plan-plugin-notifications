@@ -16,6 +16,8 @@ class Plugin extends Base
         $this->container['notificationJob'] = $this->container->factory(function ($container) {
             return new NotificationJob($container);
         });
+        $this->template->setTemplateOverride('notification/comment_create', 'Notifications:notification/comment_create');
+        $this->template->setTemplateOverride('notification/comment_user_mention', 'Notifications:notification/comment_user_mention');
         $this->template->hook->attachCallable('template:task:sidebar:information', 'Notifications:subscription/task', function (array $task) {
             return $this->getControlState('task', $task['id'], $task['project_id']);
         });

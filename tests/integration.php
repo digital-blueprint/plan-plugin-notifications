@@ -83,6 +83,9 @@ $group = $container['groupModel']->create('Notification group');
 $container['groupMemberModel']->addUser($group, $users['groupwatcher']);
 $container['projectGroupRoleModel']->addGroup($project, $group, Role::PROJECT_VIEWER);
 $container['userSession']->initialize($container['userModel']->getById($users['author']));
+$baseUrl = 'http://127.0.0.1:7000/';
+$container['configModel']->save(['application_url' => $baseUrl]);
+$container['memoryCache']->flush();
 
 $prefs = $container['subscriptionModel'];
 foreach (['author', 'watcher', 'muted', 'other', 'groupwatcher'] as $name) {
@@ -122,11 +125,20 @@ $comment = function ($body, $name = 'author', $visibility = Role::APP_USER) use 
         'task_id' => $task, 'user_id' => $users[$name], 'comment' => $body, 'visibility' => $visibility,
     ]);
 };
-$comment("Hello @Watcher (watcher@example.test)\u{200B} and @Muted (muted@example.test)\u{200B}");
+$expectCommentLink = function ($commentId, $label) use ($email, $task, $project, $baseUrl) {
+    $body = $email->messages['watcher@example.test'][0][1] ?? '';
+    $taskUrl = $baseUrl.'?controller=TaskViewController&amp;action=show&amp;task_id='.$task;
+    $boardUrl = $baseUrl.'?controller=BoardViewController&amp;action=show&amp;project_id='.$project;
+    same(true, strpos($body, 'href="'.$taskUrl.'#comment-'.$commentId.'"') !== false, $label);
+    same(true, strpos($body, 'href="'.$taskUrl.'"') !== false, 'task link is preserved');
+    same(true, strpos($body, 'href="'.$boardUrl.'"') !== false, 'board link is preserved');
+};
+$mentionId = $comment("Hello @Watcher (watcher@example.test)\u{200B} and @Muted (muted@example.test)\u{200B}");
 same([CommentModel::EVENT_USER_MENTION], $events('watcher'), 'overlapping subscriptions and inline mention coalesce');
 same([CommentModel::EVENT_USER_MENTION], $events('muted'), 'mute does not block mention');
 same(1, count($email->messages['watcher@example.test'] ?? []), 'overlap sends a single email');
 same(true, strpos($email->messages['watcher@example.test'][0][0], 'mentioned') !== false, 'email describes the mention');
+$expectCommentLink($mentionId, 'mention email links to its comment');
 $clear();
 
 $comment("@Watcher (watcher@example.test)\u{200B} please review");
@@ -138,9 +150,10 @@ same([], $events('watcher'), 'no restricted comment notification despite watch a
 same([], $email->messages, 'no restricted comment email');
 $clear();
 
-$comment('Ordinary comment', 'assignee');
+$commentId = $comment('Ordinary comment', 'assignee');
 same(Preferences::SUBSCRIBE, $prefs->get(Preferences::TASK, $task, $users['assignee']), 'commenter automatically subscribed');
 same([], $events('muted'), 'mute blocks ordinary activity');
+$expectCommentLink($commentId, 'new comment email links to its comment');
 $clear();
 
 $prefs->save(Preferences::TASK, $task, $users['assignee'], Preferences::UNSUBSCRIBE);
