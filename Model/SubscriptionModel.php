@@ -13,6 +13,8 @@ class SubscriptionModel extends Base
     const UNSUBSCRIBE = 'unsubscribe';
     const MUTE = 'mute';
     const WATCH = 'watch';
+    // Profile filter values 1–4 are already used by Plan.
+    const PROFILE_NO_TASKS = 5;
 
     public function allows($projectId, $userId)
     {

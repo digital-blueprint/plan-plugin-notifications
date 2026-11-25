@@ -20,6 +20,7 @@ class Plugin extends Base
         });
         $this->template->setTemplateOverride('notification/comment_create', 'Notifications:notification/comment_create');
         $this->template->setTemplateOverride('notification/comment_user_mention', 'Notifications:notification/comment_user_mention');
+        $this->template->setTemplateOverride('user_view/notifications', 'Notifications:user_view/notifications');
         $this->hook->on('template:layout:css', ['template' => 'plugins/Notifications/Assets/css/notifications.css']);
         $this->template->hook->attachCallable('template:task:sidebar:information', 'Notifications:subscription/task', function (array $task) {
             return $this->getControlState('task', $task['id'], $task['project_id']);

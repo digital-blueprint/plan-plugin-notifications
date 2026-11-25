@@ -69,9 +69,11 @@ foreach (['author', 'watcher', 'muted', 'other', 'assignee', 'groupwatcher', 'le
         'role' => $name === 'author' ? Role::APP_ADMIN : Role::APP_USER,
     ]);
     $users[$name] = $user;
+    $profileFilter = in_array($name, ['assignee', 'groupwatcher', 'mentioned'], true)
+        ? (string) Preferences::PROFILE_NO_TASKS : ($name === 'legacy' ? 1 : 4);
     $container['userNotificationModel']->saveSettings($user, [
         'notification_types' => $name === 'silent' ? [] : ['web' => true] + ($name === 'watcher' ? ['email' => true] : []),
-        'notifications_filter' => $name === 'legacy' ? 1 : 4,
+        'notifications_filter' => $profileFilter,
     ]);
 }
 
@@ -114,7 +116,7 @@ same(Preferences::SUBSCRIBE, $prefs->get(Preferences::TASK, $task, $users['watch
 same(Preferences::SUBSCRIBE, $prefs->get(Preferences::TASK, $task, $users['silent']), 'mention subscribes even without a delivery channel');
 same(Preferences::INHERIT, $prefs->get(Preferences::TASK, $task, $users['other']), 'mention does not subscribe a nonmember');
 same([TaskModel::EVENT_USER_MENTION], $events('watcher'), 'native task mention and watch coalesce');
-same([TaskModel::EVENT_CREATE], $events('groupwatcher'), 'group viewer can watch');
+same([TaskModel::EVENT_CREATE], $events('groupwatcher'), 'project watch works with No tasks by default, including group viewers');
 same([TaskModel::EVENT_CREATE], $events('legacy'), 'initial assignee gets one notification');
 same([], $events('author'), 'no self notification even when watching');
 same([], $events('other'), 'no delivery without membership');
@@ -144,7 +146,7 @@ same([CommentModel::EVENT_USER_MENTION], $events('muted'), 'mute does not block 
 same(Preferences::MUTE, $prefs->get(Preferences::TASK, $task, $users['muted']), 'mention preserves mute');
 same([CommentModel::EVENT_USER_MENTION], $events('legacy'), 'unsubscribe does not block mention');
 same(Preferences::UNSUBSCRIBE, $prefs->get(Preferences::TASK, $task, $users['legacy']), 'mention preserves unsubscribe');
-same([CommentModel::EVENT_USER_MENTION], $events('mentioned'), 'first comment mention sends one alert');
+same([CommentModel::EVENT_USER_MENTION], $events('mentioned'), 'mention sends one alert with No tasks by default');
 same(Preferences::SUBSCRIBE, $prefs->get(Preferences::TASK, $task, $users['mentioned']), 'comment mention automatically subscribes');
 same(1, count($email->messages['watcher@example.test'] ?? []), 'overlap sends a single email');
 same(true, strpos($email->messages['watcher@example.test'][0][0], 'mentioned') !== false, 'email describes the mention');
@@ -178,7 +180,13 @@ same(true, $container['taskModificationModel']->update([
     'id' => $task, 'owner_id' => $users['assignee'], 'title' => 'Updated title and assignment',
 ]), 'assignment with other edits');
 same(Preferences::SUBSCRIBE, $prefs->get(Preferences::TASK, $task, $users['assignee']), 'assignee automatically subscribed');
-same([TaskModel::EVENT_UPDATE], $events('assignee'), 'assignment with other edits is notified once');
+same([TaskModel::EVENT_UPDATE], $events('assignee'), 'assignment with other edits is notified once with No tasks by default');
+$clear();
+
+$prefs->save(Preferences::TASK, $task, $users['assignee'], Preferences::UNSUBSCRIBE);
+$comment('An update after the assignee unsubscribed');
+same([], $events('assignee'), 'No tasks by default does not fall back to ordinary alerts for assigned tasks');
+$prefs->save(Preferences::TASK, $task, $users['assignee'], Preferences::SUBSCRIBE);
 $clear();
 
 $container['groupMemberModel']->removeUser($group, $users['groupwatcher']);
@@ -194,6 +202,18 @@ same([], $events('groupwatcher'), 'a removed group member no longer receives upd
 $taskData = $container['taskFinderModel']->getDetails($task);
 $projectData = $container['projectModel']->getById($project);
 $template = $container['template'];
+$profileSettings = $container['userNotificationModel']->readSettings($users['assignee']);
+same(Preferences::PROFILE_NO_TASKS, (int) $profileSettings['notifications_filter'], 'the existing profile save path persists No tasks by default');
+$profileForm = $template->render('user_view/notifications', [
+    'user' => $container['userModel']->getById($users['assignee']),
+    'types' => $container['userNotificationTypeModel']->getTypes(),
+    'notifications' => $profileSettings,
+    'filters' => $container['userNotificationFilterModel']->getFilters(),
+    'projects' => [],
+]);
+same(true, strpos($profileForm, 'No tasks by default') !== false, 'profile form renders the new option');
+same(true, preg_match('/name="notifications_filter"[^>]*value="'.Preferences::PROFILE_NO_TASKS.'"[^>]*checked="checked"/', $profileForm) === 1, 'saved profile option renders as selected');
+same(true, strpos($profileForm, 'All tasks') !== false, 'the existing profile options remain available');
 $renderTask = function () use ($template, $taskData) {
     return $template->hook->render('template:task:sidebar:information', ['task' => $taskData]);
 };

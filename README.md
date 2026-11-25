@@ -8,6 +8,8 @@ See [the project plan](PROJECT_PLAN.md) for scope, release checks, and follow-up
 
 In your profile’s **Notifications** settings, enable **Web** for in-app alerts, **Email**, or both. Watching, subscribing, and being mentioned do not turn on a delivery channel. Email also requires an email address on your account and a configured mail server.
 
+Choose **No tasks by default** in that same form to turn off alerts based on your profile’s task rules. Keep a delivery channel enabled to still receive alerts for task subscriptions (including automatic subscriptions), project watches, and direct `@mentions`.
+
 ### Project and task settings
 
 On the board, task list, or overview pages, use the bell menu after the view links (Overview, Board, List, …). A filled bell means you’re watching all activity. On a task page, use **Notifications** in the task sidebar.
