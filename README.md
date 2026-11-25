@@ -57,3 +57,11 @@ php plugins/Notifications/tests/integration.php "$PWD"
 ```
 
 The test uses an in-memory SQLite database and captures outgoing email after core renders it. To also send through a local test SMTP server, set `PLAN_NOTIFICATIONS_TEST_SMTP_PORT` to its loopback port. For installations with external queue workers, follow the worker rollout instructions in the [project plan](PROJECT_PLAN.md).
+
+## Releasing
+
+1. Set `getPluginVersion()` in `Plugin.php` to the next `X.Y.Z` and add a matching `## [X.Y.Z]` section to `CHANGELOG.md` (optionally `## [X.Y.Z] - YYYY-MM-DD`). Run the integration test against the Plan revision you intend to support.
+2. Push the reviewed release commit to the `release` branch. GitHub Actions lints PHP, creates the `vX.Y.Z` tag and release, and uses only that changelog section’s body as the release notes. The attached `Notifications-X.Y.Z.zip` extracts to `Notifications/` for manual installation under Plan’s `plugins/` directory.
+3. Update `plan-docker` separately to pin the released commit. Publishing a release does not change that submodule pin.
+
+To preview the ZIP and release notes from the current **committed** snapshot, run `python3 scripts/prepare-release.py /path/to/output`. To retry a failed release, rerun the workflow on the same commit; it won’t move an existing tag or overwrite a published release.
