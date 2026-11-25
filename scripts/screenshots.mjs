@@ -1,26 +1,19 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
+import { withDemoPlan } from './screenshot-demo.mjs';
 
-const [projectId, taskId] = process.argv.slice(2);
-if (![projectId, taskId].every(id => /^[1-9]\d*$/.test(id ?? ''))) {
-    console.error('Usage: just screenshots <project-id> <task-id>');
-    process.exit(1);
-}
-
-const baseUrl = 'http://127.0.0.1:7000/';
 const output = new URL('../docs/screenshots/', import.meta.url);
-const browser = await chromium.launch({ executablePath: process.env.PLAN_SCREENSHOT_CHROMIUM });
-try {
-    const page = await browser.newPage({ viewport: { width: 1280, height: 840 }, deviceScaleFactor: 2 });
+
+async function captureMenusOnPage(page, { baseUrl, projectId, taskId, username, password }) {
     page.setDefaultTimeout(10_000);
 
     await page.goto(`${baseUrl}?controller=AuthController&action=login`);
-    await page.locator('input[name="username"]').fill(process.env.PLAN_SCREENSHOT_USER ?? 'admin');
-    const password = page.locator('input[name="password"]');
-    await password.fill(process.env.PLAN_SCREENSHOT_PASSWORD ?? 'admin');
-    await password.press('Enter');
-    await password.waitFor({ state: 'hidden' }).catch(() => {
-        throw new Error('Could not log in to plan-docker. Check PLAN_SCREENSHOT_USER and PLAN_SCREENSHOT_PASSWORD.');
+    await page.locator('input[name="username"]').fill(username);
+    const passwordInput = page.locator('input[name="password"]');
+    await passwordInput.fill(password);
+    await passwordInput.press('Enter');
+    await passwordInput.waitFor({ state: 'hidden' }).catch(() => {
+        throw new Error(`Could not log in to Plan at ${baseUrl}.`);
     });
 
     async function capture(route, selector, contextSelector, rightPadding = 24) {
@@ -83,6 +76,30 @@ try {
     await writeFile(new URL('project-notifications.webp', output), project);
     await writeFile(new URL('task-notifications.webp', output), task);
     console.log('Saved both menus to docs/screenshots/.');
-} finally {
-    await browser.close();
+}
+
+async function captureMenus(options) {
+    const browser = await chromium.launch({ executablePath: process.env.PLAN_SCREENSHOT_CHROMIUM });
+    try {
+        const page = await browser.newPage({ viewport: { width: 1280, height: 840 }, deviceScaleFactor: 2 });
+        await captureMenusOnPage(page, options);
+    } finally {
+        await browser.close();
+    }
+}
+
+const ids = process.argv.slice(2);
+if (!ids.length) {
+    await withDemoPlan(captureMenus);
+} else if (ids.length === 2 && ids.every(id => /^[1-9]\d*$/.test(id))) {
+    await captureMenus({
+        baseUrl: 'http://127.0.0.1:7000/',
+        projectId: ids[0],
+        taskId: ids[1],
+        username: process.env.PLAN_SCREENSHOT_USER ?? 'admin',
+        password: process.env.PLAN_SCREENSHOT_PASSWORD ?? 'admin',
+    });
+} else {
+    console.error('Usage: just screenshots | just screenshots-existing <project-id> <task-id>');
+    process.exitCode = 1;
 }

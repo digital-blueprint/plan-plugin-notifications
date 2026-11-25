@@ -70,15 +70,15 @@ The test uses an in-memory SQLite database and captures outgoing email after cor
 
 ### Refresh the README screenshots
 
-Start `plan-docker` with this plugin mounted and open a demo project and task to find their numeric IDs. From this plugin directory, with Node.js, npm, and `just` installed, run:
+On Linux, with [devenv](https://devenv.sh/) installed and the `plan` submodule initialized in `plan-docker`, run this from the plugin directory:
 
 ```sh
-npm ci --prefix scripts
-npm exec --prefix scripts -- playwright install chromium
-just screenshots 2 2 # Replace these with your demo project and task IDs.
+devenv shell -- just screenshots
 ```
 
-The recipe logs in to `http://127.0.0.1:7000/` as the local Docker `admin` user and overwrites both WebP files in `docs/screenshots/` without changing notification preferences. Set `PLAN_SCREENSHOT_USER` and `PLAN_SCREENSHOT_PASSWORD` if you changed the development credentials. To use an existing Chromium binary instead of installing one with Playwright, set `PLAN_SCREENSHOT_CHROMIUM` to its path.
+The recipe installs the locked Playwright dependencies, exports the sibling `../plan` checkout at `HEAD`, and loads this plugin from the working tree. It seeds a demo board and task in a temporary SQLite database, starts Plan on a free loopback port, and overwrites both WebP files in `docs/screenshots/`. Both menus show their default selections. The temporary server and database are removed afterward; Docker and existing Plan data are not used.
+
+From a standalone plugin checkout, set `PLAN_SCREENSHOT_PLAN_DIR` to a Plan Git checkout with committed vendor dependencies. To capture a running `plan-docker` instance at `http://127.0.0.1:7000/` instead, run `npm ci --prefix scripts` in the devenv shell, then `just screenshots-existing <project-id> <task-id>`. That recipe uses `admin`/`admin` unless you set `PLAN_SCREENSHOT_USER` and `PLAN_SCREENSHOT_PASSWORD`.
 
 ## Releasing
 
