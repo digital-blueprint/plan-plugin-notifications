@@ -25,6 +25,14 @@ On the board, task list, or overview pages, use the bell menu after the view lin
 
 **Supported activity** for a project watch or task subscription: new tasks, new comments, assignment changes, and closing or reopening a task. Other events, such as ordinary task edits, still follow your existing profile rules unless the task is muted.
 
+**Project bell menu**
+
+<img src="docs/screenshots/project-notifications.webp" width="322" alt="Project notification menu: Participating and @mentions, or All activity">
+
+**Task sidebar menu**
+
+<img src="docs/screenshots/task-notifications.webp" width="322" alt="Task notification menu: Subscribed, Default, Unsubscribed, or Muted">
+
 ### When Plan subscribes you automatically
 
 You automatically subscribe to a task when you **create it**, **are assigned to it**, or **receive a direct `@mention`** in a new task description or a comment you can see, provided you’re an active member of the project (directly or through a group). Posting a comment alone does not subscribe you. Existing tasks are not backfilled when the plugin is installed. Being unassigned does not remove your subscription. **Unsubscribed** and **Muted** are remembered until you change them; choosing **Default** makes automatic subscription possible again.
@@ -59,6 +67,18 @@ php plugins/Notifications/tests/integration.php "$PWD"
 ```
 
 The test uses an in-memory SQLite database and captures outgoing email after core renders it. To also send through a local test SMTP server, set `PLAN_NOTIFICATIONS_TEST_SMTP_PORT` to its loopback port. For installations with external queue workers, follow the worker rollout instructions in the [project plan](PROJECT_PLAN.md).
+
+### Refresh the README screenshots
+
+Start `plan-docker` with this plugin mounted and open a demo project and task to find their numeric IDs. From this plugin directory, with Node.js, npm, and `just` installed, run:
+
+```sh
+npm ci --prefix scripts
+npm exec --prefix scripts -- playwright install chromium
+just screenshots 2 2 # Replace these with your demo project and task IDs.
+```
+
+The recipe logs in to `http://127.0.0.1:7000/` as the local Docker `admin` user and overwrites both WebP files in `docs/screenshots/` without changing notification preferences. Set `PLAN_SCREENSHOT_USER` and `PLAN_SCREENSHOT_PASSWORD` if you changed the development credentials. To use an existing Chromium binary instead of installing one with Playwright, set `PLAN_SCREENSHOT_CHROMIUM` to its path.
 
 ## Releasing
 

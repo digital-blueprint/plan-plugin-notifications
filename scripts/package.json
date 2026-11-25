@@ -1,0 +1,7 @@
+{
+  "name": "plan-notifications-screenshots",
+  "private": true,
+  "devDependencies": {
+    "playwright": "1.58.2"
+  }
+}
