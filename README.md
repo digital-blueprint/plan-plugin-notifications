@@ -25,13 +25,13 @@ On the board, task list, or overview pages, use the bell menu after the view lin
 
 **Supported activity** for a project watch or task subscription: new tasks, new comments, assignment changes, and closing or reopening a task. Other events, such as ordinary task edits, still follow your existing profile rules unless the task is muted.
 
-**Project bell menu**
+**Project bell menu** — click the outlined bell next to the project’s view links.
 
-<img src="docs/screenshots/project-notifications.webp" width="322" alt="Project notification menu: Participating and @mentions, or All activity">
+![Project board toolbar with the bell outlined after the view links and the project notification menu open](docs/screenshots/project-notifications.webp)
 
-**Task sidebar menu**
+**Task sidebar menu** — click the outlined **Notifications** row in the left sidebar.
 
-<img src="docs/screenshots/task-notifications.webp" width="322" alt="Task notification menu: Subscribed, Default, Unsubscribed, or Muted">
+<img src="docs/screenshots/task-notifications.webp" width="550" alt="Task page with the Notifications control outlined in the left sidebar and the task notification menu open">
 
 ### When Plan subscribes you automatically
 
