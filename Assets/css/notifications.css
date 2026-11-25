@@ -1,0 +1,36 @@
+.plan-notifications-toggle {
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+ul.dropdown-submenu-open.plan-notifications-menu {
+    width: 320px;
+}
+
+.plan-notifications-menu a {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.plan-notifications-menu a > i {
+    margin-top: 2px;
+}
+
+.plan-notifications-help {
+    display: block;
+    margin-top: 2px;
+    color: var(--color-light, #777);
+    font-size: 0.9em;
+    line-height: 1.35;
+}
+
+.dropdown-submenu-open li:hover .plan-notifications-help {
+    color: #fff;
+}
+
+.plan-notifications-task .dropdown-menu {
+    display: block;
+    color: var(--color-primary);
+    text-decoration: none;
+}

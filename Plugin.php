@@ -7,6 +7,8 @@ use Kanboard\Plugin\Notifications\Job\NotificationJob;
 
 class Plugin extends Base
 {
+    private $projectMenuAttached = false;
+
     public function initialize()
     {
         if (!in_array(DB_DRIVER, ['sqlite', 'mysql', 'postgres'], true)) {
@@ -18,10 +20,27 @@ class Plugin extends Base
         });
         $this->template->setTemplateOverride('notification/comment_create', 'Notifications:notification/comment_create');
         $this->template->setTemplateOverride('notification/comment_user_mention', 'Notifications:notification/comment_user_mention');
+        $this->hook->on('template:layout:css', ['template' => 'plugins/Notifications/Assets/css/notifications.css']);
         $this->template->hook->attachCallable('template:task:sidebar:information', 'Notifications:subscription/task', function (array $task) {
             return $this->getControlState('task', $task['id'], $task['project_id']);
         });
-        $this->template->hook->attachCallable('template:project:header:after', 'Notifications:subscription/project', function (array $project) {
+    }
+
+    public function onStartup()
+    {
+        // Attach at bootstrap so the bell follows view links added by other plugins.
+        // Queue workers bootstrap once per job, so attach only once per process.
+        if ($this->projectMenuAttached || !in_array(DB_DRIVER, ['sqlite', 'mysql', 'postgres'], true)) {
+            return;
+        }
+
+        $this->projectMenuAttached = true;
+        $this->template->hook->attachCallable('template:project-header:view-switcher', 'Notifications:subscription/project', function (array $project) {
+            // Task pages reuse the project header but have their own notification control.
+            if ($this->request->getIntegerParam('task_id') > 0) {
+                return ['notificationPreference' => null];
+            }
+
             return $this->getControlState('project', $project['id'], $project['id']);
         });
     }

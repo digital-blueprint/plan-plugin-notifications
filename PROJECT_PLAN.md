@@ -14,7 +14,7 @@ Add GitHub-style project watches and task subscriptions to Plan without creating
 
 ## Implementation
 
-1. Store per-user project and task preferences using plugin-owned migrations. Add controls to the project header and task sidebar, using authenticated, CSRF-protected POST requests.
+1. Store per-user project and task preferences using plugin-owned migrations. Add compact dropdown menus to project pages and the task sidebar, using authenticated, CSRF-protected links.
 2. Replace the notification-job factory at plugin startup. Resolve personal recipients once, combining existing filters, subscription state and native mention lookup. Keep core channel rendering and project-level delivery. The fork emits separate native mention events after creation; mark those already handled by the combined job so they cannot deliver twice.
 3. Validate against the pinned Plan fork. The SQLite integration suite covers opt-out precedence, automatic subscription, assignment with other edits, mention overlap, restricted comments, group access, and both channel settings. SMTP delivery was smoke-tested with Docker GreenMail. Run the migration tests on MySQL and PostgreSQL and verify the external queue path before calling those setups supported.
 4. Update the `plan-docker` submodule pin. If using external workers, deploy the same plugin version on the web and worker processes, drain pending jobs before switching versions, and restart workers after deployment.

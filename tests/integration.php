@@ -183,42 +183,70 @@ same([], $events('groupwatcher'), 'a removed group member no longer receives upd
 $taskData = $container['taskFinderModel']->getDetails($task);
 $projectData = $container['projectModel']->getById($project);
 $template = $container['template'];
-same(true, strpos($template->hook->render('template:task:sidebar:information', ['task' => $taskData]), 'task_notification_preference') !== false, 'task control renders');
-same(true, strpos($template->hook->render('template:project:header:after', ['project' => $projectData]), 'project_notification_preference') !== false, 'project control renders');
+$renderTask = function () use ($template, $taskData) {
+    return $template->hook->render('template:task:sidebar:information', ['task' => $taskData]);
+};
+$renderProject = function () use ($template, $projectData) {
+    return $template->hook->render('template:project-header:view-switcher', ['project' => $projectData, 'filters' => ['search' => '']]);
+};
+same(true, strpos($renderTask(), 'preference=mute') !== false, 'task menu renders');
+same(true, strpos($renderTask(), 'csrf_token=') !== false, 'task menu links carry a CSRF token');
+same(false, strpos($renderProject(), 'plan-notifications'), 'project menu waits for bootstrap');
+// Bootstrap twice, as a queue worker does for consecutive jobs.
+$container['dispatcher']->dispatch(new Symfony\Contracts\EventDispatcher\Event(), 'app.bootstrap');
+$container['dispatcher']->dispatch(new Symfony\Contracts\EventDispatcher\Event(), 'app.bootstrap');
+$projectMenu = $renderProject();
+same(true, strpos($projectMenu, 'preference=watch') !== false, 'project menu renders');
+same(1, substr_count($projectMenu, 'class="plan-notifications"'), 'project menu is attached once');
+same(true, strpos($projectMenu, '<li class="plan-notifications"') > strrpos($projectMenu, 'class="view-'), 'project menu follows other view links');
 
 // Capture redirects instead of exiting the test process.
 unset($container['response']);
 $response = new class {
-    public $redirected = false;
+    public $url = null;
 
     public function redirect($url)
     {
-        $this->redirected = true;
+        $this->url = $url;
     }
 };
 $container['response'] = $response;
-$request = function ($method, array $body) use ($container, $task, $project) {
+$request = function (array $query) use ($container) {
     unset($container['request']);
-    $container['request'] = new Request($container, ['REQUEST_METHOD' => $method], ['task_id' => $task, 'project_id' => $project], $body);
+    $container['request'] = new Request($container, ['REQUEST_METHOD' => 'GET'], $query + ['plugin' => 'Notifications']);
 };
+$request(['task_id' => $task, 'project_id' => $project]);
+same(false, strpos($renderProject(), 'plan-notifications'), 'project control is hidden on task pages');
+same(true, strpos($renderTask(), 'preference=mute') !== false, 'task control remains available on task pages');
+
 $controller = new SubscriptionController($container);
-$validBody = [
-    'csrf_token' => $container['token']->getCSRFToken(),
-    'task_notification_preference' => Preferences::MUTE,
+$token = $container['token']->getCSRFToken();
+$rejected = [
+    'missing CSRF token' => ['task_id' => $task, 'preference' => Preferences::MUTE],
+    'invalid CSRF token' => ['task_id' => $task, 'preference' => Preferences::MUTE, 'csrf_token' => 'invalid'],
+    'unknown preference' => ['task_id' => $task, 'preference' => Preferences::WATCH, 'csrf_token' => $token],
 ];
-foreach (['GET' => $validBody, 'POST' => ['task_notification_preference' => Preferences::MUTE]] as $method => $body) {
-    $request($method, $body);
+foreach ($rejected as $label => $query) {
+    $request($query);
     try {
         $controller->task();
-        throw new RuntimeException('Invalid save should have been forbidden: '.$method);
+        throw new RuntimeException('Invalid save should have been forbidden: '.$label);
     } catch (AccessForbiddenException $e) {
-        same(false, $response->redirected, 'invalid save: '.$method);
+        same(null, $response->url, 'invalid save: '.$label);
     }
 }
-$request('POST', $validBody);
+$request(['task_id' => $task, 'preference' => Preferences::MUTE, 'csrf_token' => $token]);
 $controller->task();
-same(true, $response->redirected, 'successful form save redirects');
-same(Preferences::MUTE, $prefs->get(Preferences::TASK, $task, $users['author']), 'authenticated CSRF-protected POST saves preference');
+same(true, strpos((string) $response->url, 'task_id='.$task) !== false, 'task save returns to the task');
+same(Preferences::MUTE, $prefs->get(Preferences::TASK, $task, $users['author']), 'CSRF-protected link saves task preference');
+
+$request(['project_id' => $project, 'preference' => Preferences::WATCH, 'view' => 'TaskListController', 'csrf_token' => $token]);
+$controller->project();
+same(true, strpos((string) $response->url, 'TaskListController') !== false, 'project save returns to the current view');
+same(Preferences::WATCH, $prefs->get(Preferences::PROJECT, $project, $users['author']), 'CSRF-protected link saves project preference');
+$request(['project_id' => $project, 'preference' => Preferences::INHERIT, 'view' => 'https://example.test/', 'csrf_token' => $token]);
+$controller->project();
+same(true, strpos((string) $response->url, 'BoardViewController') !== false, 'unknown views return to the board');
 
 session_write_close();
 echo "Plan Notifications integration checks passed.\n";

@@ -10,20 +10,22 @@ In your profile’s **Notifications** settings, enable **Web** for in-app alerts
 
 ### Project and task settings
 
+On the board, task list, or overview pages, use the bell menu after the view links (Overview, Board, List, …). A filled bell means you’re watching all activity. On a task page, use **Notifications** in the task sidebar.
+
 | Where | Setting | What it does |
 | --- | --- | --- |
-| Project header | **Default** | You are not watching the entire project. Task subscriptions, direct mentions, and your profile’s notification rules still apply. |
-| Project header | **Watch** | Follow supported activity on every task in this project, even tasks you didn’t create or aren’t assigned to. |
-| Task sidebar | **Inherit** | Clear your task-level choice. Project watching and profile rules still apply, and future activity can automatically subscribe you. |
-| Task sidebar | **Subscribe** | Follow supported activity on this task, even if you don’t watch the project or the task doesn’t match your profile rules. |
-| Task sidebar | **Unsubscribe** | Stop following this task and prevent automatic resubscription. **You can still get alerts through a project watch or a profile rule.** |
-| Task sidebar | **Mute** | Stop ordinary task alerts from subscriptions, project watches, and profile rules. It also prevents automatic resubscription. Direct `@mentions` still notify you. |
+| Project bell menu | **Participating and @mentions** (default) | You are not watching the entire project. Task subscriptions, direct mentions, and your profile’s notification rules still apply. |
+| Project bell menu | **All activity** (filled bell) | Follow supported activity on every task in this project, even tasks you didn’t create or aren’t assigned to. |
+| Task **Notifications** | **Default** | Clear your task-level choice. Project watching and profile rules still apply, and future activity can automatically subscribe you. |
+| Task **Notifications** | **Subscribed** | Follow supported activity on this task, even if you don’t watch the project or the task doesn’t match your profile rules. |
+| Task **Notifications** | **Unsubscribed** | Stop following this task and prevent automatic resubscription. **You can still get alerts through a project watch or a profile rule.** |
+| Task **Notifications** | **Muted** | Stop ordinary task alerts from subscriptions, project watches, and profile rules. It also prevents automatic resubscription. Direct `@mentions` still notify you. |
 
 **Supported activity** for a project watch or task subscription: new tasks, new comments, assignment changes, and closing or reopening a task. Other events, such as ordinary task edits, still follow your existing profile rules unless the task is muted.
 
 ### When Plan subscribes you automatically
 
-You automatically subscribe to a task when you **create it**, **are assigned to it**, or **post a comment on it**, provided you’re an active member of the project (directly or through a group). Existing tasks are not backfilled when the plugin is installed. Being unassigned does not remove your subscription. **Unsubscribe** and **Mute** are remembered until you change them; choosing **Inherit** makes automatic subscription possible again.
+You automatically subscribe to a task when you **create it**, **are assigned to it**, or **post a comment on it**, provided you’re an active member of the project (directly or through a group). Existing tasks are not backfilled when the plugin is installed. Being unassigned does not remove your subscription. **Unsubscribed** and **Muted** are remembered until you change them; choosing **Default** makes automatic subscription possible again.
 
 ### Which rule wins?
 
@@ -39,7 +41,7 @@ If several rules match the same action, you get **one alert per enabled channel*
 ### Common examples
 
 - **“I’m not watching the project. Why did I get an email?”** If you created the task, were assigned to it, or commented on it, you may already be subscribed. Check the task sidebar.
-- **“I unsubscribed. Why am I still getting emails?”** Check whether you watch the project or have a profile rule that matches the task. Choose **Mute** to stop ordinary alerts for just that task.
+- **“I unsubscribed. Why am I still getting emails?”** Check whether you watch the project or have a profile rule that matches the task. Choose **Muted** to stop ordinary alerts for just that task.
 - **“Why is there no link to the comment?”** An administrator must set the **Application URL** in Plan’s application settings. Once set, new-comment and comment-mention emails include a **View comment** link that jumps straight to the comment.
 
 ## Installation
