@@ -90,7 +90,7 @@ class NotificationJob extends CoreNotificationJob
             $watching = $watchEvent && (
                 $taskPreference === SubscriptionModel::SUBSCRIBE ||
                 ($projectPreferences[$userId] ?? null) === SubscriptionModel::WATCH
-            );
+            ) && $this->userNotificationFilterModel->filterProject($user, $eventData);
             if ($watching || ((int) $user['notifications_filter'] !== SubscriptionModel::PROFILE_NO_TASKS &&
                 $this->userNotificationFilterModel->shouldReceiveNotification($user, $eventData))) {
                 $this->sendUserNotification($user, $eventName, $eventData);

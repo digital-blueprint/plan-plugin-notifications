@@ -43,7 +43,7 @@ Plan only sends personal alerts to active project members with an enabled channe
 
 1. **Direct `@mention`:** Use Plan’s mention picker in a new task description or a new comment. A direct mention bypasses task mute, project watch settings, and profile filters for the alert, but it only subscribes a recipient whose task setting is **Default**. Adding a mention by editing an existing task or comment does not trigger a new mention alert or subscription.
 2. **Mute:** If there’s no direct mention, a muted task sends no ordinary personal alert.
-3. **Subscription or project watch:** For supported activity, either one is enough. These rules can notify you even if your profile filters only allow tasks assigned to or created by you.
+3. **Subscription or project watch:** For supported activity, either one is enough. These rules can notify you even if your profile filters only allow tasks assigned to or created by you. They do respect the profile’s **I only want to receive notifications for these projects** list: in a project outside that list, you only get direct `@mentions`.
 4. **Profile rules:** If none of the above sends an alert or blocks it, Plan checks your usual task and project filters. For example, **Only for tasks assigned to me** still matches an assigned task even after you unsubscribe from it.
 
 If several rules match the same action, you get **one alert per enabled channel**. If that action mentions you, the alert is labeled as a mention. Scheduled overdue reminders and project-wide integrations use separate settings and aren’t changed by these rules.

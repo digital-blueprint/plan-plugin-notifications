@@ -248,6 +248,20 @@ foreach (['task' => $renderTask, 'project' => $renderProject] as $scope => $rend
         same(false, strpos($renderMenu(), $warning), $scope.' menu does not warn with '.$channel.' enabled');
     }
 }
+$otherProject = $container['projectModel']->create(['name' => 'Other project'], $users['author'], true);
+$container['userNotificationModel']->saveSettings($users['watcher'], [
+    'notification_types' => ['email' => true], 'notifications_filter' => 4, 'notification_projects' => [$otherProject => true],
+]);
+$clear();
+$comment('Comment in a project excluded by the profile');
+same([], $email->messages['watcher@example.test'] ?? [], 'subscriptions and project watches respect the profile project list');
+$comment("@Watcher (watcher@example.test)\u{200B} mentions still arrive");
+same(1, count($email->messages['watcher@example.test'] ?? []), 'mentions bypass the profile project list');
+$clear();
+$container['userNotificationModel']->saveSettings($users['watcher'], [
+    'notification_types' => ['email' => true], 'notifications_filter' => 4,
+]);
+
 $container['userSession']->initialize($container['userModel']->getById($users['author']));
 $container['userNotificationModel']->saveSettings($users['author'], [
     'notification_types' => ['email' => true, 'web' => true], 'notifications_filter' => 4,
