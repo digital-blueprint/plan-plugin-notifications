@@ -7,7 +7,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PACKAGE_PATHS = ("Plugin.php", "Assets", "Controller", "Job", "Model", "Schema", "Template")
+PACKAGE_PATHS = ("Plugin.php", "Assets", "Controller", "Job", "Locale", "Model", "Schema", "Template")
 
 
 def git(*args):

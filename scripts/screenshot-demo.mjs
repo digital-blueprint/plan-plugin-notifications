@@ -35,7 +35,7 @@ export async function withDemoPlan(capture) {
         execFileSync('tar', ['-xf', archive, '-C', root], { stdio: 'inherit' });
         const installed = join(root, 'plugins', 'Notifications');
         await mkdir(installed, { recursive: true });
-        for (const entry of ['Plugin.php', 'Assets', 'Controller', 'Job', 'Model', 'Schema', 'Template']) {
+        for (const entry of ['Plugin.php', 'Assets', 'Controller', 'Job', 'Locale', 'Model', 'Schema', 'Template']) {
             await cp(join(plugin, entry), join(installed, entry), { recursive: true });
         }
         if (process.exitCode) return;

@@ -204,13 +204,16 @@ $projectData = $container['projectModel']->getById($project);
 $template = $container['template'];
 $profileSettings = $container['userNotificationModel']->readSettings($users['assignee']);
 same(Preferences::PROFILE_NO_TASKS, (int) $profileSettings['notifications_filter'], 'the existing profile save path persists No tasks by default');
-$profileForm = $template->render('user_view/notifications', [
-    'user' => $container['userModel']->getById($users['assignee']),
-    'types' => $container['userNotificationTypeModel']->getTypes(),
-    'notifications' => $profileSettings,
-    'filters' => $container['userNotificationFilterModel']->getFilters(),
-    'projects' => [],
-]);
+$renderProfile = function () use ($container, $template, $users, $profileSettings) {
+    return $template->render('user_view/notifications', [
+        'user' => $container['userModel']->getById($users['assignee']),
+        'types' => $container['userNotificationTypeModel']->getTypes(),
+        'notifications' => $profileSettings,
+        'filters' => $container['userNotificationFilterModel']->getFilters(),
+        'projects' => [],
+    ]);
+};
+$profileForm = $renderProfile();
 same(true, strpos($profileForm, 'No tasks by default') !== false, 'profile form renders the new option');
 same(true, preg_match('/name="notifications_filter"[^>]*value="'.Preferences::PROFILE_NO_TASKS.'"[^>]*checked="checked"/', $profileForm) === 1, 'saved profile option renders as selected');
 same(true, strpos($profileForm, 'All tasks') !== false, 'the existing profile options remain available');
@@ -251,6 +254,36 @@ $container['userNotificationModel']->saveSettings($users['author'], [
 ]);
 same(false, strpos($renderTask(), $warning), 'task menu does not warn with both channels enabled');
 same(false, strpos($renderProject(), $warning), 'project menu does not warn with both channels enabled');
+
+// The recipient's language can differ from the language of the request that triggered the email.
+$container['userModel']->update(['id' => $users['watcher'], 'language' => 'de_DE']);
+$clear();
+$germanComment = $comment('German recipient');
+$expectCommentLink($germanComment, 'German comment email still jumps to the comment');
+same(true, strpos($email->messages['watcher@example.test'][0][1], '>Kommentar ansehen</a>') !== false, 'ordinary comment link uses recipient language');
+$clear();
+$germanMention = $comment("@Watcher (watcher@example.test)\u{200B} please review");
+$expectCommentLink($germanMention, 'German mention email still jumps to the comment');
+same(true, strpos($email->messages['watcher@example.test'][0][1], '>Kommentar ansehen</a>') !== false, 'mention email link uses recipient language');
+
+$container['userModel']->update(['id' => $users['author'], 'language' => 'de_DE']);
+$container['userSession']->initialize($container['userModel']->getById($users['author']));
+$container['dispatcher']->dispatch(new Symfony\Contracts\EventDispatcher\Event(), 'app.bootstrap');
+same(true, strpos($renderTask(), 'Aufgabenbenachrichtigungen') !== false, 'German task menu');
+same(true, strpos($renderProject(), 'Alle Aktivitäten') !== false, 'German project menu');
+same(true, strpos($renderProfile(), 'Standardmäßig keine Aufgaben') !== false, 'German profile option');
+
+$container['userModel']->update(['id' => $users['watcher'], 'language' => 'en_US']);
+$clear();
+$comment('English recipient');
+same(true, strpos($email->messages['watcher@example.test'][0][1], '>View comment</a>') !== false, 'English recipient gets English link despite German session');
+
+$container['userModel']->update(['id' => $users['watcher'], 'language' => '']);
+$container['configModel']->save(['application_language' => 'de_DE']);
+$container['memoryCache']->flush();
+$clear();
+$comment('Recipient without a language preference');
+same(true, strpos($email->messages['watcher@example.test'][0][1], '>Kommentar ansehen</a>') !== false, 'comment link falls back to application language');
 
 // Capture redirects instead of exiting the test process.
 unset($container['response']);

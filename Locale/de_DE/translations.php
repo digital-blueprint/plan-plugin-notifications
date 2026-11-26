@@ -1,0 +1,25 @@
+<?php
+
+return [
+    'Task subscriptions and project watches for Plan.' => 'Aufgabenabonnements und Projektbeobachtung für Plan.',
+    'Unable to save your notification preference.' => 'Die Benachrichtigungseinstellung konnte nicht gespeichert werden.',
+    'Email and web notifications are off.' => 'E-Mail- und Web-Benachrichtigungen sind deaktiviert.',
+    'Open notification settings' => 'Benachrichtigungseinstellungen öffnen',
+    'Subscribed' => 'Abonniert',
+    'New comments, assignment changes, and closing or reopening this task.' => 'Neue Kommentare, Änderungen der Zuweisung sowie das Schließen und Wiedereröffnen dieser Aufgabe.',
+    'Default' => 'Standard',
+    'Use your project watch and profile rules. Creating the task, being assigned to it, or being @mentioned subscribes you.' => 'Es gelten die Projektbeobachtung und die Benachrichtigungsregeln im Profil. Wenn Sie die Aufgabe erstellen, sie Ihnen zugewiesen wird oder Sie per @ erwähnt werden, abonnieren Sie die Aufgabe automatisch.',
+    'Unsubscribed' => 'Nicht abonniert',
+    'Stop following this task. Project watches and profile rules still apply.' => 'Diese Aufgabe nicht mehr verfolgen. Die Projektbeobachtung und die Benachrichtigungsregeln im Profil gelten weiterhin.',
+    'Muted' => 'Stummgeschaltet',
+    'Only direct @mentions.' => 'Nur direkte @Erwähnungen.',
+    'Task notifications' => 'Aufgabenbenachrichtigungen',
+    'Project notifications: All activity' => 'Projektbenachrichtigungen: Alle Aktivitäten',
+    'Project notifications: Participating and @mentions' => 'Projektbenachrichtigungen: Beteiligung und @Erwähnungen',
+    'Participating and @mentions' => 'Beteiligung und @Erwähnungen',
+    'Only tasks you follow, your profile notification rules, and direct mentions.' => 'Nur Aufgaben, denen Sie folgen, Benachrichtigungen gemäß Ihren Profilregeln und direkte Erwähnungen.',
+    'All activity' => 'Alle Aktivitäten',
+    'New tasks, comments, assignments, and closing or reopening on every task.' => 'Neue Aufgaben, Kommentare, Zuweisungen sowie das Schließen und Wiedereröffnen aller Aufgaben.',
+    'No tasks by default' => 'Standardmäßig keine Aufgaben',
+    'View comment' => 'Kommentar ansehen',
+];

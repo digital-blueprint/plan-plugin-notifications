@@ -3,6 +3,7 @@
 namespace Kanboard\Plugin\Notifications;
 
 use Kanboard\Core\Plugin\Base;
+use Kanboard\Core\Translator;
 use Kanboard\Plugin\Notifications\Job\NotificationJob;
 
 class Plugin extends Base
@@ -29,9 +30,15 @@ class Plugin extends Base
 
     public function onStartup()
     {
+        if (!in_array(DB_DRIVER, ['sqlite', 'mysql', 'postgres'], true)) {
+            return;
+        }
+
+        Translator::load($this->languageModel->getCurrentLanguage(), __DIR__.'/Locale');
+
         // Attach at bootstrap so the bell follows view links added by other plugins.
         // Queue workers bootstrap once per job, so attach only once per process.
-        if ($this->projectMenuAttached || !in_array(DB_DRIVER, ['sqlite', 'mysql', 'postgres'], true)) {
+        if ($this->projectMenuAttached) {
             return;
         }
 
@@ -73,7 +80,7 @@ class Plugin extends Base
 
     public function getPluginDescription()
     {
-        return 'Task subscriptions and project watches for Plan.';
+        return t('Task subscriptions and project watches for Plan.');
     }
 
     public function getPluginAuthor()

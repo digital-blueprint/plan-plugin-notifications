@@ -6,6 +6,7 @@
 - Creating a task and being assigned to it still subscribe you automatically. A direct `@mention` in a new task description or a comment you can see now also subscribes you; posting a comment alone no longer does.
 - Direct mentions still send an alert through your enabled channels, but do not override an explicit **Unsubscribed** or **Muted** setting.
 - Task and project notification menus now warn when both **Email** and **Web** notifications are off and link to your profile’s notification settings.
+- Added German translations for notification settings, menus, and comment links in emails.
 
 ## [0.1.0]
 

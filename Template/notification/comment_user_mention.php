@@ -6,7 +6,7 @@
 
 <?= $this->text->markdown($comment['comment'], true) ?>
 
-<?= $this->render('Notifications:notification/comment_link', ['task' => $task, 'comment' => $comment]) ?>
+<?= $this->render('Notifications:notification/comment_link', ['task' => $task, 'comment' => $comment, 'label' => $plan_notifications_comment_link_label ?? t('View comment')]) ?>
 <?= $this->render('notification/footer', ['task' => $task]) ?>
 </body>
 </html>

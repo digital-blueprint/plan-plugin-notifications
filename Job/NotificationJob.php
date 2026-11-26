@@ -3,6 +3,7 @@
 namespace Kanboard\Plugin\Notifications\Job;
 
 use Kanboard\Core\Security\Role;
+use Kanboard\Core\Translator;
 use Kanboard\Event\GenericEvent;
 use Kanboard\Job\NotificationJob as CoreNotificationJob;
 use Kanboard\Model\CommentModel;
@@ -61,7 +62,7 @@ class NotificationJob extends CoreNotificationJob
             $users = $this->userNotificationModel->getUsersWithNotificationEnabled($projectId, $actor);
             foreach ($users as $user) {
                 if ((int) $user['id'] === $userId) {
-                    $this->userNotificationModel->sendUserNotification($user, $eventName, $eventData);
+                    $this->sendUserNotification($user, $eventName, $eventData);
                     break;
                 }
             }
@@ -78,7 +79,7 @@ class NotificationJob extends CoreNotificationJob
         foreach ($this->userNotificationModel->getUsersWithNotificationEnabled($projectId, $actor) as $user) {
             $userId = (int) $user['id'];
             if (isset($mentions[$userId])) {
-                $this->userNotificationModel->sendUserNotification($user, $mentionEvent, $eventData + ['mention' => $user]);
+                $this->sendUserNotification($user, $mentionEvent, $eventData + ['mention' => $user]);
                 continue;
             }
 
@@ -92,11 +93,29 @@ class NotificationJob extends CoreNotificationJob
             );
             if ($watching || ((int) $user['notifications_filter'] !== SubscriptionModel::PROFILE_NO_TASKS &&
                 $this->userNotificationFilterModel->shouldReceiveNotification($user, $eventData))) {
-                $this->userNotificationModel->sendUserNotification($user, $eventName, $eventData);
+                $this->sendUserNotification($user, $eventName, $eventData);
             }
         }
 
         $this->projectNotificationModel->sendNotifications($projectId, $eventName, $eventData);
+    }
+
+    private function sendUserNotification(array $user, $eventName, array $eventData)
+    {
+        if (in_array($eventName, [CommentModel::EVENT_CREATE, CommentModel::EVENT_USER_MENTION], true)) {
+            // Core reloads only its own catalog for each recipient. Pass the translated plugin label to the template.
+            $language = !empty($user['language']) ? $user['language'] : $this->configModel->get('application_language', 'en_US');
+            $locales = Translator::$locales;
+            Translator::unload();
+            try {
+                Translator::load($language, dirname(__DIR__).'/Locale');
+                $eventData['plan_notifications_comment_link_label'] = t('View comment');
+            } finally {
+                Translator::$locales = $locales;
+            }
+        }
+
+        $this->userNotificationModel->sendUserNotification($user, $eventName, $eventData);
     }
 
     private function autoSubscribe(array $task, array $eventData, $eventName, $assignment, array $users)
