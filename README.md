@@ -66,6 +66,20 @@ The menus can’t detect everything. You also won’t get alerts if:
 - You can’t see the comment because of its visibility setting.
 - An administrator hasn’t configured a mail server (email only).
 
+### What changes when the plugin is enabled
+
+Even before anyone uses the menus, Plan’s notifications behave differently than without the plugin:
+
+- **Automatic subscriptions.** Creating a task, being assigned to it, or being `@mentioned` subscribes you. You then get supported alerts for that task even if your profile is set to **Only for tasks assigned to me** or **Only for tasks created by me**. Being unassigned doesn’t remove the subscription.
+- **Mentions anywhere in the text.** Plan without the plugin only sends a mention alert when the mention is at the very start of a new task description or comment. With the plugin, a mention anywhere in the text sends one.
+- **One alert instead of two.** Without the plugin, a mentioned user can get a mention alert and a regular alert for the same action. With the plugin, they get only the mention alert.
+- **No alert about your own action without a login.** When a task or comment is created without a logged-in user (for example through the API with an application token), the task creator or comment author is not notified about their own action.
+- **Late alerts are dropped.** If a task moves to another project or is deleted before a queued alert is sent, the alert is discarded.
+
+### Disabling the plugin
+
+Subscriptions and project watches are kept in the database, but no longer have any effect. Users who chose **No tasks by default** silently stop receiving task alerts, except direct `@mentions`, because Plan doesn’t know this option. Their profile form then shows no selection until they choose and save another option. Ask them to review their notification settings before you disable the plugin.
+
 ### Common examples
 
 - **“I’m not watching the project. Why did I get an email?”** If you created the task, were assigned to it, or were mentioned, you may already be subscribed. Check the task sidebar.

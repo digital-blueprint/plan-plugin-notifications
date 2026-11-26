@@ -13,6 +13,7 @@
 - Added German translations for notification settings, menus, and comment links in emails.
 - Task subscriptions and project watches now respect the profile’s **I only want to receive notifications for these projects** list. Direct mentions still bypass it.
 - Fixed: the commenter’s name in new-comment emails was not HTML-escaped.
+- README: documented how notifications behave differently with the plugin enabled, and what happens when it is disabled.
 
 ## [0.1.0]
 

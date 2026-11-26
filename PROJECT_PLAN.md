@@ -19,6 +19,16 @@ Add GitHub-style project watches and task subscriptions to Plan without creating
 3. Validate against the pinned Plan fork. The SQLite integration suite covers opt-out precedence, automatic subscription, assignment with other edits, mention overlap, restricted comments, group access, and both channel settings. SMTP delivery was smoke-tested with Docker GreenMail. Run the migration tests on MySQL and PostgreSQL and verify the external queue path before calling those setups supported.
 4. Update the `plan-docker` submodule pin. If using external workers, deploy the same plugin version on the web and worker processes, drain pending jobs before switching versions, and restart workers after deployment.
 
+## Updating Plan
+
+The plugin depends on Plan internals. Run the integration test whenever the `plan` submodule pin changes, and check these points in the upstream diff:
+
+- `app/Job/NotificationJob.php`: the plugin replaces `execute()` entirely, so upstream changes there are not picked up.
+- `app/Job/TaskEventJob.php`, `app/Job/CommentEventJob.php` and `app/Job/UserMentionJob.php`: native mentions are suppressed through a marker the plugin adds to the creation event, which core then reuses for the mention job. If core stops reusing that data, users get a mention plus a regular alert. The plugin's mention pattern must also match the syntax core produces.
+- `app/Template/notification/comment_create.php`, `comment_user_mention.php` and `user_view/notifications.php`: overridden by the plugin. Port upstream changes to the plugin copies, and keep the variables passed to the core profile form in sync with `UserViewController::notifications`.
+- `UserNotificationFilterModel`: the plugin stores **No tasks by default** as filter value `100`. Check that core hasn't started using that value.
+- The `template:project-header:view-switcher` and `template:task:sidebar:information` hooks: if either is removed, its menu disappears without an error.
+
 ## Later
 
 Consider newly added mentions on edits, more event filters, a subscription overview, and stock Kanboard support once there is a compatibility matrix. Scheduled overdue reminders use a separate Kanboard path and are not changed by the plugin.
