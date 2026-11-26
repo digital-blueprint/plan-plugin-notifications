@@ -31,7 +31,7 @@
                 'action' => 'task',
                 'params' => ['task_id' => $task['id'], 'project_id' => $task['project_id']],
                 'current' => $notificationPreference,
-                'notificationChannelsOff' => $notificationChannelsOff,
+                'warnings' => $notificationWarnings,
                 'options' => $options,
             ]) ?>
         </div>

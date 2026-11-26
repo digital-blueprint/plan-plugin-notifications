@@ -248,10 +248,18 @@ foreach (['task' => $renderTask, 'project' => $renderProject] as $scope => $rend
         same(false, strpos($renderMenu(), $warning), $scope.' menu does not warn with '.$channel.' enabled');
     }
 }
+$asUser = function ($name) use ($container, $users) {
+    $container['userSession']->initialize($container['userModel']->getById($users[$name]));
+};
+
 $otherProject = $container['projectModel']->create(['name' => 'Other project'], $users['author'], true);
+$excluded = 'Your profile only allows notifications from other projects.';
 $container['userNotificationModel']->saveSettings($users['watcher'], [
     'notification_types' => ['email' => true], 'notifications_filter' => 4, 'notification_projects' => [$otherProject => true],
 ]);
+$asUser('watcher');
+same(true, strpos($renderTask(), $excluded) !== false, 'task menu warns when the profile excludes the project');
+same(true, strpos($renderProject(), $excluded) !== false, 'project menu warns when the profile excludes the project');
 $clear();
 $comment('Comment in a project excluded by the profile');
 same([], $email->messages['watcher@example.test'] ?? [], 'subscriptions and project watches respect the profile project list');
@@ -261,6 +269,29 @@ $clear();
 $container['userNotificationModel']->saveSettings($users['watcher'], [
     'notification_types' => ['email' => true], 'notifications_filter' => 4,
 ]);
+$asUser('watcher');
+same(false, strpos($renderTask(), $excluded), 'no project list warning without a project list');
+
+$watchHint = 'You watch all activity in this project';
+$prefs->save(Preferences::TASK, $task, $users['watcher'], Preferences::UNSUBSCRIBE);
+same(true, strpos($renderTask(), $watchHint) !== false, 'unsubscribed task explains the project watch');
+$prefs->save(Preferences::TASK, $task, $users['watcher'], Preferences::SUBSCRIBE);
+same(false, strpos($renderTask(), $watchHint), 'subscribed task has no project watch hint');
+$asUser('legacy');
+same(true, strpos($renderTask(), 'Your profile notification rules match this task') !== false, 'unsubscribed task explains the matching profile rule');
+$asUser('assignee');
+$prefs->save(Preferences::TASK, $task, $users['assignee'], Preferences::UNSUBSCRIBE);
+same(false, strpos($renderTask(), 'plan-notifications-warning'), 'No tasks by default has no profile rule hint');
+$prefs->save(Preferences::TASK, $task, $users['assignee'], Preferences::SUBSCRIBE);
+
+$container['userModel']->update(['id' => $users['muted'], 'email' => '']);
+$asUser('muted');
+$container['userNotificationModel']->saveSettings($users['muted'], ['notification_types' => ['email' => true, 'web' => true]]);
+same(true, strpos($renderProject(), 'so you only get web notifications') !== false, 'menu warns that email has no address');
+$container['userNotificationModel']->saveSettings($users['muted'], ['notification_types' => ['email' => true]]);
+same(true, strpos($renderTask(), 'so you get no notifications') !== false, 'menu warns that email-only has no address');
+$container['userModel']->update(['id' => $users['muted'], 'email' => 'muted@example.test']);
+$container['userNotificationModel']->saveSettings($users['muted'], ['notification_types' => ['web' => true]]);
 
 $container['userSession']->initialize($container['userModel']->getById($users['author']));
 $container['userNotificationModel']->saveSettings($users['author'], [
@@ -305,7 +336,7 @@ $comment('Comment by a user with HTML in their name', 'assignee');
 $body = $email->messages['watcher@example.test'][0][1] ?? '';
 same(true, strpos($body, '&lt;img src=x onerror=alert(1)&gt;') !== false, 'comment email escapes the author name');
 same(false, strpos($body, '<img src=x'), 'comment email contains no raw author HTML');
-$container['userSession']->initialize($container['userModel']->getById($users['author']));
+$asUser('author');
 
 // Capture redirects instead of exiting the test process.
 unset($container['response']);

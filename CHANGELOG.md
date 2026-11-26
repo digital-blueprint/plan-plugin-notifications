@@ -5,7 +5,11 @@
 - Added **No tasks by default** in profile notification settings. It turns off default task alerts without disabling subscriptions, project watches, or direct mentions.
 - Creating a task and being assigned to it still subscribe you automatically. A direct `@mention` in a new task description or a comment you can see now also subscribes you; posting a comment alone no longer does.
 - Direct mentions still send an alert through your enabled channels, but do not override an explicit **Unsubscribed** or **Muted** setting.
-- Task and project notification menus now warn when both **Email** and **Web** notifications are off and link to your profile’s notification settings.
+- Task and project notification menus now warn, with a link to your notification settings, when:
+  - both **Email** and **Web** notifications are off;
+  - **Email** is on but your account has no email address;
+  - your profile’s project list excludes the project;
+  - an **Unsubscribed** task still sends alerts because you watch the project or your profile rules match it.
 - Added German translations for notification settings, menus, and comment links in emails.
 - Task subscriptions and project watches now respect the profile’s **I only want to receive notifications for these projects** list. Direct mentions still bypass it.
 - Fixed: the commenter’s name in new-comment emails was not HTML-escaped.

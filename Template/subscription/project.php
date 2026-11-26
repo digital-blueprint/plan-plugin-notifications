@@ -12,7 +12,7 @@
                 'action' => 'project',
                 'params' => ['project_id' => $project['id'], 'view' => $this->app->getRouterController()],
                 'current' => $notificationPreference,
-                'notificationChannelsOff' => $notificationChannelsOff,
+                'warnings' => $notificationWarnings,
                 'options' => [
                     'inherit' => [
                         'label' => t('Participating and @mentions'),

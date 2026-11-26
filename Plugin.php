@@ -24,7 +24,7 @@ class Plugin extends Base
         $this->template->setTemplateOverride('user_view/notifications', 'Notifications:user_view/notifications');
         $this->hook->on('template:layout:css', ['template' => 'plugins/Notifications/Assets/css/notifications.css']);
         $this->template->hook->attachCallable('template:task:sidebar:information', 'Notifications:subscription/task', function (array $task) {
-            return $this->getControlState('task', $task['id'], $task['project_id']);
+            return $this->getControlState('task', $task['id'], $task['project_id'], $task);
         });
     }
 
@@ -58,7 +58,7 @@ class Plugin extends Base
         return ['Plugin\\Notifications\\Model' => ['SubscriptionModel']];
     }
 
-    private function getControlState($scope, $subjectId, $projectId)
+    private function getControlState($scope, $subjectId, $projectId, array $task = [])
     {
         $userId = $this->userSession->getId();
         if (!$this->subscriptionModel->allows($projectId, $userId)) {
@@ -66,11 +66,48 @@ class Plugin extends Base
         }
 
         $table = $scope === 'task' ? Model\SubscriptionModel::TASK : Model\SubscriptionModel::PROJECT;
-        $types = $this->userNotificationTypeModel->getSelectedTypes($userId);
+        $preference = $this->subscriptionModel->get($table, $subjectId, $userId);
         return [
-            'notificationPreference' => $this->subscriptionModel->get($table, $subjectId, $userId),
-            'notificationChannelsOff' => !in_array('email', $types, true) && !in_array('web', $types, true),
+            'notificationPreference' => $preference,
+            'notificationWarnings' => $this->getWarnings($userId, $projectId, $scope === 'task' ? $preference : null, $task),
         ];
+    }
+
+    // Explain settings that make the menu choice behave differently than its label suggests.
+    private function getWarnings($userId, $projectId, $taskPreference, array $task)
+    {
+        $types = $this->userNotificationTypeModel->getSelectedTypes($userId);
+        $email = in_array('email', $types, true);
+        $web = in_array('web', $types, true);
+        if (!$email && !$web) {
+            return [t('Email and web notifications are off.')];
+        }
+
+        $user = $this->userModel->getById($userId);
+        $warnings = [];
+        if ($email && empty($user['email'])) {
+            $warnings[] = $web
+                ? t('Your account has no email address, so you only get web notifications.')
+                : t('Your account has no email address, so you get no notifications. Add an email address or turn on web notifications.');
+        }
+
+        $projects = $this->userNotificationFilterModel->getSelectedProjects($userId);
+        if (!empty($projects) && !in_array($projectId, $projects)) {
+            $warnings[] = t('Your profile only allows notifications from other projects. In this project you only get direct @mentions, even if you are subscribed or watching.');
+            return $warnings;
+        }
+
+        if ($taskPreference === Model\SubscriptionModel::UNSUBSCRIBE) {
+            $projectPreference = $this->subscriptionModel->get(Model\SubscriptionModel::PROJECT, $projectId, $userId);
+            if ($projectPreference === Model\SubscriptionModel::WATCH) {
+                $warnings[] = t('You watch all activity in this project, so you still get alerts for this task. Choose Muted to stop them.');
+            } elseif ((int) $user['notifications_filter'] !== Model\SubscriptionModel::PROFILE_NO_TASKS &&
+                $this->userNotificationFilterModel->shouldReceiveNotification($user, ['task' => $task])) {
+                $warnings[] = t('Your profile notification rules match this task, so you still get alerts for it. Choose Muted to stop them.');
+            }
+        }
+
+        return $warnings;
     }
 
     public function getPluginName()

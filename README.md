@@ -12,7 +12,7 @@ Choose **No tasks by default** in that same form to turn off alerts based on you
 
 ### Project and task settings
 
-On the board, task list, or overview pages, use the bell menu after the view links (Overview, Board, List, …). A filled bell means you’re watching all activity. On a task page, use **Notifications** in the task sidebar. Both menus warn you if Email and Web are off and link to your profile’s notification settings.
+On the board, task list, or overview pages, use the bell menu after the view links (Overview, Board, List, …). A filled bell means you’re watching all activity. On a task page, use **Notifications** in the task sidebar. Both menus show a warning when your other settings change what the menu choice does (see [Warnings in the menus](#warnings-in-the-menus)).
 
 | Where | Setting | What it does |
 | --- | --- | --- |
@@ -48,10 +48,29 @@ Plan only sends personal alerts to active project members with an enabled channe
 
 If several rules match the same action, you get **one alert per enabled channel**. If that action mentions you, the alert is labeled as a mention. Scheduled overdue reminders and project-wide integrations use separate settings and aren’t changed by these rules.
 
+### Warnings in the menus
+
+Both menus show a warning, with a link to your notification settings, when another setting changes what you’ll receive:
+
+| Warning | What it means |
+| --- | --- |
+| Email and web notifications are off. | You get no alerts at all, whatever you choose in the menu. |
+| Your account has no email address… | **Email** is on, but there’s no address to send to. You get only web alerts, or none if **Web** is off. |
+| Your profile only allows notifications from other projects… | Your profile’s project list excludes this project. Subscriptions and project watches send nothing here; only direct `@mentions` do. |
+| You watch all activity in this project… | Shown on an **Unsubscribed** task. Your project watch still sends supported alerts for it. Choose **Muted** to stop them. |
+| Your profile notification rules match this task… | Shown on an **Unsubscribed** task. Your profile rules (for example **All tasks** or **Only for tasks assigned to me**) still send alerts for it. Choose **Muted** to stop them. |
+
+The menus can’t detect everything. You also won’t get alerts if:
+
+- The activity isn’t supported (see the list above) and your profile rules don’t match it.
+- You can’t see the comment because of its visibility setting.
+- An administrator hasn’t configured a mail server (email only).
+
 ### Common examples
 
 - **“I’m not watching the project. Why did I get an email?”** If you created the task, were assigned to it, or were mentioned, you may already be subscribed. Check the task sidebar.
-- **“I unsubscribed. Why am I still getting emails?”** Check whether you watch the project or have a profile rule that matches the task. Choose **Muted** to stop ordinary alerts for just that task.
+- **“I unsubscribed. Why am I still getting emails?”** Check whether you watch the project or have a profile rule that matches the task; the task menu shows a warning if either applies. Choose **Muted** to stop ordinary alerts for just that task.
+- **“I’m subscribed. Why don’t I get anything?”** Open the task’s **Notifications** menu and look for a warning. The usual causes are that both channels are off, your account has no email address, or your profile’s project list excludes this project.
 - **“Why is there no link to the comment?”** An administrator must set the **Application URL** in Plan’s application settings. Once set, new-comment and comment-mention emails include a **View comment** link that jumps straight to the comment.
 
 ## Installation
