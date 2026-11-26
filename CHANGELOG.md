@@ -7,6 +7,7 @@
 - Direct mentions still send an alert through your enabled channels, but do not override an explicit **Unsubscribed** or **Muted** setting.
 - Task and project notification menus now warn when both **Email** and **Web** notifications are off and link to your profile’s notification settings.
 - Added German translations for notification settings, menus, and comment links in emails.
+- Fixed: the commenter’s name in new-comment emails was not HTML-escaped.
 
 ## [0.1.0]
 

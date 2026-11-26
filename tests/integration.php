@@ -285,6 +285,14 @@ $clear();
 $comment('Recipient without a language preference');
 same(true, strpos($email->messages['watcher@example.test'][0][1], '>Kommentar ansehen</a>') !== false, 'comment link falls back to application language');
 
+$container['userModel']->update(['id' => $users['assignee'], 'name' => '<img src=x onerror=alert(1)>']);
+$clear();
+$comment('Comment by a user with HTML in their name', 'assignee');
+$body = $email->messages['watcher@example.test'][0][1] ?? '';
+same(true, strpos($body, '&lt;img src=x onerror=alert(1)&gt;') !== false, 'comment email escapes the author name');
+same(false, strpos($body, '<img src=x'), 'comment email contains no raw author HTML');
+$container['userSession']->initialize($container['userModel']->getById($users['author']));
+
 // Capture redirects instead of exiting the test process.
 unset($container['response']);
 $response = new class {

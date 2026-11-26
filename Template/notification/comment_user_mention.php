@@ -1,6 +1,6 @@
 <html>
 <body>
-<h2><?= e('You were mentioned in a comment on the task #%d', $task['id']) ?></h2>
+<h2><?= t('You were mentioned in a comment on the task #%d', $task['id']) ?></h2>
 
 <p><?= $this->text->e($task['title']) ?></p>
 
