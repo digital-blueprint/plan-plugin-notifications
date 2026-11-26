@@ -231,6 +231,27 @@ same(true, strpos($projectMenu, 'preference=watch') !== false, 'project menu ren
 same(1, substr_count($projectMenu, 'class="plan-notifications"'), 'project menu is attached once');
 same(true, strpos($projectMenu, '<li class="plan-notifications"') > strrpos($projectMenu, 'class="view-'), 'project menu follows other view links');
 
+$warning = 'Email and web notifications are off.';
+$settingsLink = $container['helper']->url->href('UserViewController', 'notifications', ['user_id' => $users['silent']]);
+foreach (['task' => $renderTask, 'project' => $renderProject] as $scope => $renderMenu) {
+    $container['userSession']->initialize($container['userModel']->getById($users['silent']));
+    $menu = $renderMenu();
+    same(true, strpos($menu, $warning) !== false, $scope.' menu warns when both channels are off');
+    same(true, strpos($menu, 'href="'.$settingsLink.'"') !== false, $scope.' warning links to the current user settings');
+    same(true, strpos($menu, 'preference=inherit') !== false, $scope.' preferences remain available without a channel');
+
+    foreach (['watcher' => 'email', 'assignee' => 'web'] as $name => $channel) {
+        $container['userSession']->initialize($container['userModel']->getById($users[$name]));
+        same(false, strpos($renderMenu(), $warning), $scope.' menu does not warn with '.$channel.' enabled');
+    }
+}
+$container['userSession']->initialize($container['userModel']->getById($users['author']));
+$container['userNotificationModel']->saveSettings($users['author'], [
+    'notification_types' => ['email' => true, 'web' => true], 'notifications_filter' => 4,
+]);
+same(false, strpos($renderTask(), $warning), 'task menu does not warn with both channels enabled');
+same(false, strpos($renderProject(), $warning), 'project menu does not warn with both channels enabled');
+
 // Capture redirects instead of exiting the test process.
 unset($container['response']);
 $response = new class {

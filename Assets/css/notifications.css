@@ -7,14 +7,29 @@ ul.dropdown-submenu-open.plan-notifications-menu {
     width: 320px;
 }
 
-.plan-notifications-menu a {
+.plan-notifications-menu li:not(.plan-notifications-warning) > a {
     display: flex;
     align-items: flex-start;
     gap: 6px;
 }
 
-.plan-notifications-menu a > i {
+.plan-notifications-menu li:not(.plan-notifications-warning) > a > i {
     margin-top: 2px;
+}
+
+.plan-notifications-menu .plan-notifications-warning {
+    background-color: var(--alert-background-color-default);
+    color: var(--color-primary);
+}
+
+.plan-notifications-menu .plan-notifications-warning a,
+.plan-notifications-menu .plan-notifications-warning:hover i {
+    color: inherit;
+}
+
+.plan-notifications-menu .plan-notifications-warning a {
+    display: block;
+    text-decoration: underline;
 }
 
 .plan-notifications-help {

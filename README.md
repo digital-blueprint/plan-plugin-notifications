@@ -12,7 +12,7 @@ Choose **No tasks by default** in that same form to turn off alerts based on you
 
 ### Project and task settings
 
-On the board, task list, or overview pages, use the bell menu after the view links (Overview, Board, List, …). A filled bell means you’re watching all activity. On a task page, use **Notifications** in the task sidebar.
+On the board, task list, or overview pages, use the bell menu after the view links (Overview, Board, List, …). A filled bell means you’re watching all activity. On a task page, use **Notifications** in the task sidebar. Both menus warn you if Email and Web are off and link to your profile’s notification settings.
 
 | Where | Setting | What it does |
 | --- | --- | --- |

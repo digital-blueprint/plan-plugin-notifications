@@ -59,7 +59,11 @@ class Plugin extends Base
         }
 
         $table = $scope === 'task' ? Model\SubscriptionModel::TASK : Model\SubscriptionModel::PROJECT;
-        return ['notificationPreference' => $this->subscriptionModel->get($table, $subjectId, $userId)];
+        $types = $this->userNotificationTypeModel->getSelectedTypes($userId);
+        return [
+            'notificationPreference' => $this->subscriptionModel->get($table, $subjectId, $userId),
+            'notificationChannelsOff' => !in_array('email', $types, true) && !in_array('web', $types, true),
+        ];
     }
 
     public function getPluginName()
